@@ -1,0 +1,4 @@
+set(CN_PROJECT_NAME "AdonWallet")
+set(CN_CURRENCY_DISPLAY_NAME "AdonWallet")
+set(CN_CURRENCY_TICKER "ADON")
+set(CN_VERSION 1.0.0)

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Adon Wallet
+Comment=Adon wallet
+Exec=adon %U
+Terminal=false
+Type=Application
+Icon=adon
+MimeType=x-scheme-handler/adon;
+Categories=Office;Finance;
+Version=1.0.0

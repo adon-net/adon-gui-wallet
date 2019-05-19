@@ -1,0 +1,3 @@
+[submodule "cryptonote"]
+	path = cryptonote
+	url = http://git.cupwings.com/crypto/rd/redwind-core.git
