@@ -12,7 +12,7 @@ This in a multi platform GUI wallet for Adon.
 ### 1. Clone wallet sources
 
 ```
-git clone https://github.com/nanzee/redwind-gui.git
+git clone https://github.com/adon-net/adon-gui-wallet.git
 ```
 
 ### 2. Update git submodules
