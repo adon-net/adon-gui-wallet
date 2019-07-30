@@ -123,7 +123,7 @@ void ReceiveFrame::saveQrCode() {
 
 void ReceiveFrame::generatePaymentIdClicked() {
   Crypto::Hash payment_id;
-  payment_id = Crypto::rand<Crypto::Hash>();
+  Random::randomBytes(sizeof(payment_id.data), payment_id.data);
   m_ui->m_paymentIdRequestEdit->setText(QString::fromStdString(Common::podToHex(payment_id)));
 }
 

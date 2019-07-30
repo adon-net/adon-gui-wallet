@@ -19,16 +19,18 @@
 #include <QThread>
 
 #include <crypto/hash.h>
+#include <cstring>
 
 #include "Worker.h"
 
+using namespace std;
 namespace WalletGui {
 
 namespace  {
-  void miningRound(Job& _localJob, quint32& _localNonce, Crypto::Hash& _hash, Crypto::cn_context& _context) {
+  void miningRound(Job& _localJob, quint32& _localNonce, Crypto::Hash& _hash) {
     _localJob.blob.replace(39, sizeof(_localNonce), reinterpret_cast<char*>(&_localNonce), sizeof(_localNonce));
     std::memset(&_hash, 0, sizeof(_hash));
-    Crypto::cn_slow_hash_v0(_context, _localJob.blob.data(), _localJob.blob.size(), _hash);
+    Crypto::cn_slow_hash_v0( _localJob.blob.data(), _localJob.blob.size(), _hash);
   }
 }
 
@@ -93,20 +95,19 @@ void Worker::run() {
   Job localJob;
   quint32 localNonce;
   Crypto::Hash hash;
-  Crypto::cn_context context;
   while (!m_isStopped) {
     bool alternateObserverExists = !m_alternateJob.jobId.isEmpty();
     if (m_alternateProbability == 0 || !alternateObserverExists) {
-      mainJobMiningRound(localJob, localNonce, hash, context);
+      mainJobMiningRound(localJob, localNonce, hash);
     } else if (qrand() % 100 < m_alternateProbability) {
-      alternateJobMiningRound(localJob, localNonce, hash, context);
+      alternateJobMiningRound(localJob, localNonce, hash);
     } else {
-      mainJobMiningRound(localJob, localNonce, hash, context);
+      mainJobMiningRound(localJob, localNonce, hash);
     }
   }
 }
 
-void Worker::mainJobMiningRound(Job& _localJob, quint32& _localNonce, Crypto::Hash& _hash, Crypto::cn_context& _context) {
+void Worker::mainJobMiningRound(Job& _localJob, quint32& _localNonce, Crypto::Hash& _hash) {
   {
     QReadLocker lock(&m_mainJobLock);
     if (m_mainJob.jobId.isEmpty()) {
@@ -121,14 +122,14 @@ void Worker::mainJobMiningRound(Job& _localJob, quint32& _localNonce, Crypto::Ha
   }
 
   _localNonce = ++m_mainNonce;
-  miningRound(_localJob, _localNonce, _hash, _context);
+  miningRound(_localJob, _localNonce, _hash);
   ++m_hashCounter;
   if (Q_UNLIKELY(((quint32*)&_hash)[7] < _localJob.target)) {
     Q_EMIT shareFoundSignal(_localJob.jobId, _localNonce, QByteArray(reinterpret_cast<char*>(&_hash), sizeof(_hash)));
   }
 }
 
-void Worker::alternateJobMiningRound(Job& _localJob, quint32& _localNonce, Crypto::Hash& _hash, Crypto::cn_context& _context) {
+void Worker::alternateJobMiningRound(Job& _localJob, quint32& _localNonce, Crypto::Hash& _hash) {
   {
     QReadLocker lock(&m_alternateJobLock);
     if (m_alternateJob.jobId.isEmpty()) {
@@ -141,7 +142,7 @@ void Worker::alternateJobMiningRound(Job& _localJob, quint32& _localNonce, Crypt
   }
 
   _localNonce = ++m_alternateNonce;
-  miningRound(_localJob, _localNonce, _hash, _context);
+  miningRound(_localJob, _localNonce, _hash);
   ++m_alternateHashCounter;
   if (Q_UNLIKELY(((quint32*)&_hash)[7] < _localJob.target)) {
     Q_EMIT alternateShareFoundSignal(_localJob.jobId, _localNonce, QByteArray(reinterpret_cast<char*>(&_hash), sizeof(_hash)));

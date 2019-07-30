@@ -4,11 +4,44 @@ include(QREncode.cmake)
 
 cmake_policy(SET CMP0043 NEW)
 cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0071 NEW)
+#cmake_policy(SET CMP0071 NEW)
+#cmake_policy(SET CMP0028 NEW)
+cmake_policy(SET CMP0020 NEW)
+enable_language(C)
+enable_language(CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(${CN_PROJECT_NAME})
+## This section is for settings found in the slow-hash routine(s) that may benefit some systems (mostly ARM)
+set(FORCE_USE_HEAP ON CACHE BOOL "Force the use of heap memory allocation")
+set(NO_AES OFF CACHE BOOL "Turn off Hardware AES instructions?")
+set(NO_OPTIMIZED_MULTIPLY_ON_ARM OFF CACHE BOOL "Turn off Optimized Multiplication on ARM?")
 
+message(STATUS "Building for target architecture: ${ARCH}")
+
+if (FORCE_USE_HEAP)
+    add_definitions(-DFORCE_USE_HEAP)
+    message(STATUS "FORCE_USE_HEAP: ENABLED")
+else ()
+    message(STATUS "FORCE_USE_HEAP: DISABLED")
+endif ()
+
+if (NO_AES)
+    add_definitions(-DNO_AES)
+    message(STATUS "HW AES: DISABLED")
+else ()
+    message(STATUS "HW AES: ENABLED")
+endif ()
+
+if (NO_OPTIMIZED_MULTIPLY_ON_ARM)
+    add_definitions(-DNO_OPTIMIZED_MULTIPLY_ON_ARM)
+    message(STATUS "OPTIMIZED_ARM_MULTIPLICATION: DISABLED")
+else ()
+    message(STATUS "OPTIMIZED_ARM_MULTIPLICATION: ENABLED")
+endif ()
 execute_process(COMMAND git log -1 --pretty=format:%h
 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 OUTPUT_VARIABLE GIT_REVISION)
@@ -93,25 +126,40 @@ file(GLOB_RECURSE CRYPTONOTE_SOURCES
   cryptonote/src/Common/VectorOutputStream.cpp
   cryptonote/src/Common/ScopeExit.cpp
   cryptonote/src/ConnectivityTool/ConnectivityTool.cpp
-  cryptonote/src/crypto/blake256.c
-  cryptonote/src/crypto/chacha8.c
+  cryptonote/src/crypto/aesb.c
   cryptonote/src/crypto/crypto-ops-data.c
-  cryptonote/src/crypto/crypto-ops.c
-  cryptonote/src/crypto/crypto.cpp
   cryptonote/src/crypto/groestl.c
-  cryptonote/src/crypto/hash-extra-blake.c
-  cryptonote/src/crypto/hash-extra-groestl.c
   cryptonote/src/crypto/hash-extra-jh.c
+  cryptonote/src/crypto/initializer.h
+  cryptonote/src/crypto/oaes_config.h
+  cryptonote/src/crypto/skein.h
+  cryptonote/src/crypto/blake256.c
+  cryptonote/src/crypto/crypto-ops.c
+  cryptonote/src/crypto/groestl.h
   cryptonote/src/crypto/hash-extra-skein.c
-  cryptonote/src/crypto/hash.c
   cryptonote/src/crypto/jh.c
-  cryptonote/src/crypto/keccak.c
   cryptonote/src/crypto/oaes_lib.c
-  cryptonote/src/crypto/random.c
-  cryptonote/src/crypto/skein.c
+  cryptonote/src/crypto/skein_port.h
+  cryptonote/src/crypto/blake256.h
+  cryptonote/src/crypto/crypto-ops.h
+  cryptonote/src/crypto/groestl_tables.h
+  cryptonote/src/crypto/hash-ops.h
+  cryptonote/src/crypto/jh.h
+  cryptonote/src/crypto/oaes_lib.h
   cryptonote/src/crypto/slow-hash.c
-  cryptonote/src/crypto/slow-hash.cpp
+  cryptonote/src/crypto/chacha8.cpp
+  cryptonote/src/crypto/crypto.cpp
+  cryptonote/src/crypto/hash-extra-blake.c
+  cryptonote/src/crypto/hash.c
+  cryptonote/src/crypto/keccak.c
+  cryptonote/src/crypto/random.h
   cryptonote/src/crypto/tree-hash.c
+  cryptonote/src/crypto/chacha8.h
+  cryptonote/src/crypto/crypto.h
+  cryptonote/src/crypto/hash-extra-groestl.c hash.h
+  cryptonote/src/crypto/keccak.h
+  cryptonote/src/crypto/skein.c
+  cryptonote/src/crypto/variant2_int_sqrt.h
   cryptonote/src/CryptoNoteCore/*.cpp
   cryptonote/src/CryptoNoteProtocol/*.cpp
   cryptonote/src/Daemon/*.cpp
