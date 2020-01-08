@@ -51,7 +51,7 @@ WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/cryptonote/"
 OUTPUT_VARIABLE CN_REVISION)
 
 set(VERSION "${CN_REVISION}")
-configure_file("cryptonote/src/version.h.in" "version.h")
+configure_file("cryptonote/src/Config/version.h.in" "version.h")
 configure_file("src/CryptoNoteWalletConfig.h.in" "CryptoNoteWalletConfig.h")
 
 add_definitions (-DGIT_REVISION="${GIT_REVISION}")
@@ -95,17 +95,10 @@ add_definitions(-DGIT_REVISION="${GIT_REVISION}")
 
 set(CMAKE_AUTOMOC ON)
 
+include_directories(${CMAKE_SOURCE_DIR}/cryptonote/external/argon2/include)
+include_directories(${CMAKE_SOURCE_DIR}/cryptonote/external/miniupnpc)
+
 file(GLOB_RECURSE CRYPTONOTE_SOURCES
-  cryptonote/external/miniupnpc/connecthostport.c
-  cryptonote/external/miniupnpc/igd_desc_parse.c
-  cryptonote/external/miniupnpc/minisoap.c
-  cryptonote/external/miniupnpc/miniupnpc.c
-  cryptonote/external/miniupnpc/miniwget.c
-  cryptonote/external/miniupnpc/minixml.c
-  cryptonote/external/miniupnpc/portlistingparse.c
-  cryptonote/external/miniupnpc/receivedata.c
-  cryptonote/external/miniupnpc/upnpcommands.c
-  cryptonote/external/miniupnpc/upnpreplyparse.c
   cryptonote/src/BlockchainExplorer/BlockchainExplorer.cpp
   cryptonote/src/BlockchainExplorer/BlockchainExplorerErrors.cpp
   cryptonote/src/BlockchainExplorer/BlockchainExplorerDataBuilder.cpp
@@ -125,44 +118,46 @@ file(GLOB_RECURSE CRYPTONOTE_SOURCES
   cryptonote/src/Common/StringView.cpp
   cryptonote/src/Common/VectorOutputStream.cpp
   cryptonote/src/Common/ScopeExit.cpp
-  cryptonote/src/ConnectivityTool/ConnectivityTool.cpp
-  cryptonote/src/crypto/aesb.c
-  cryptonote/src/crypto/crypto-ops-data.c
-  cryptonote/src/crypto/groestl.c
-  cryptonote/src/crypto/hash-extra-jh.c
-  cryptonote/src/crypto/initializer.h
-  cryptonote/src/crypto/oaes_config.h
-  cryptonote/src/crypto/skein.h
-  cryptonote/src/crypto/blake256.c
-  cryptonote/src/crypto/crypto-ops.c
-  cryptonote/src/crypto/groestl.h
-  cryptonote/src/crypto/hash-extra-skein.c
-  cryptonote/src/crypto/jh.c
-  cryptonote/src/crypto/oaes_lib.c
-  cryptonote/src/crypto/skein_port.h
-  cryptonote/src/crypto/blake256.h
-  cryptonote/src/crypto/crypto-ops.h
-  cryptonote/src/crypto/groestl_tables.h
-  cryptonote/src/crypto/hash-ops.h
-  cryptonote/src/crypto/jh.h
-  cryptonote/src/crypto/oaes_lib.h
-  cryptonote/src/crypto/slow-hash.c
-  cryptonote/src/crypto/chacha8.cpp
   cryptonote/src/crypto/crypto.cpp
-  cryptonote/src/crypto/hash-extra-blake.c
+  cryptonote/src/crypto/hash-ops.h
+  cryptonote/src/crypto/initializer.h
   cryptonote/src/crypto/hash.c
-  cryptonote/src/crypto/keccak.c
+  cryptonote/src/crypto/blake256.h
   cryptonote/src/crypto/random.h
-  cryptonote/src/crypto/tree-hash.c
-  cryptonote/src/crypto/chacha8.h
-  cryptonote/src/crypto/crypto.h
-  cryptonote/src/crypto/hash-extra-groestl.c hash.h
+  cryptonote/src/crypto/groestl_tables.h
+  cryptonote/src/crypto/hash-extra-blake.c
+  cryptonote/src/crypto/oaes_config.h
+  cryptonote/src/crypto/groestl.c
+  cryptonote/src/crypto/hash-extra-skein.c
+  cryptonote/src/crypto/keccak.c
+  cryptonote/src/crypto/jh.h
   cryptonote/src/crypto/keccak.h
-  cryptonote/src/crypto/skein.c
+  cryptonote/src/crypto/skein_port.h
+  cryptonote/src/crypto/hash-extra-jh.c
+  cryptonote/src/crypto/crypto-ops.h
+  cryptonote/src/crypto/slow-hash-arm.c
+  cryptonote/src/crypto/slow-hash-x86.c
+  cryptonote/src/crypto/blake256.c
+  cryptonote/src/crypto/crypto-ops-data.c
+  cryptonote/src/crypto/crypto-ops.c
+  cryptonote/src/crypto/oaes_lib.h
+  cryptonote/src/crypto/skein.h
+  cryptonote/src/crypto/jh.c
   cryptonote/src/crypto/variant2_int_sqrt.h
+  cryptonote/src/crypto/groestl.h
+  cryptonote/src/crypto/tree-hash.c
+  cryptonote/src/crypto/hash-extra-groestl.c
+  cryptonote/src/crypto/hash.h
+  cryptonote/src/crypto/crypto.h
+  cryptonote/src/crypto/aesb.c
+  cryptonote/src/crypto/chacha8.cpp
+  cryptonote/src/crypto/skein.c
+  cryptonote/src/crypto/oaes_lib.c
+  cryptonote/src/crypto/slow-hash-portable.c
+  cryptonote/src/crypto/chacha8.h
+  cryptonote/src/crypto/slow-hash-common.h
   cryptonote/src/CryptoNoteCore/*.cpp
   cryptonote/src/CryptoNoteProtocol/*.cpp
-  cryptonote/src/Daemon/*.cpp
   cryptonote/src/HTTP/*.cpp
   cryptonote/src/InProcessNode/InProcessNode.cpp
   cryptonote/src/InProcessNode/InProcessNodeErrors.cpp
@@ -292,9 +287,9 @@ add_library(Mnemonics ${Mnemonics})
 set_target_properties(${CRYPTONOTE_LIB} PROPERTIES COMPILE_DEFINITIONS _GNU_SOURCE)
 
 if (APPLE OR ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  target_link_libraries(${CRYPTONOTE_LIB} ${Boost_LIBRARIES} ${Qt5DBus_LIBRARIES} -lresolv)
+  target_link_libraries(${CRYPTONOTE_LIB} ${Boost_LIBRARIES} ${Qt5DBus_LIBRARIES} argon2 upnpc-static -lresolv)
 else ()
-  target_link_libraries(${CRYPTONOTE_LIB} ${Boost_LIBRARIES} ${Qt5DBus_LIBRARIES})
+  target_link_libraries(${CRYPTONOTE_LIB} ${Boost_LIBRARIES} ${Qt5DBus_LIBRARIES} argon2 upnpc-static)
 endif ()
 
 set_target_properties(Mnemonics PROPERTIES COMPILE_DEFINITIONS _GNU_SOURCE)
