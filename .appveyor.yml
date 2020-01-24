@@ -1,0 +1,98 @@
+shallow_clone: true
+
+clone_depth: 2
+
+configuration:
+  - Release
+
+image:
+  - Visual Studio 2017
+
+clone_script:
+  - cmd: >-
+      git clone -q --recursive --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
+
+cache:
+  - c:\users\appveyor\clcache
+  - c:\local\boost_1_69_0
+
+environment:
+  BOOST_ROOT: C:\local\boost_1_69_0
+  BOOST_LIB_PATH_X64: C:\local\boost_1_69_0\lib64-msvc-14.1
+  BOOST_LIB_PATH_X86: C:\local\boost_1_69_0\lib32-msvc-14.1
+  VCVAR2017: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
+  VCINSTALLDIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\'
+  matrix:
+  - PLATFORM: x86 
+    QT5: C:\Qt\5.12\msvc2017   
+  - PLATFORM: x64
+    QT5: C:\Qt\5.12\msvc2017_64
+
+matrix:
+  fast_finish: true
+
+init:
+  - set PATH=c:\Python37;c:\Python37\Scripts;%PATH%
+  - set Path=%QT5%\bin;%Path%
+  # - set /p RedistVersion=<"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Microsoft.VCRedistVersion.default.txt"
+  - pip install clcache
+
+install:
+  - ps: | 
+      if ("$env:PLATFORM" -eq "x64") { 
+        Write-Host "Checking for Boost 1.69.0 x64...";$boostdir  = Test-Path $Env:BOOST_LIB_PATH_X64;If ($boostdir -eq $False) {Write-Host "Downloading Boost 1.69.0 x64...";$exePath = "$Env:TEMP\boost_1_69_0-msvc-14.1-64.exe";(New-Object Net.WebClient).DownloadFile('https://bintray.com/boostorg/release/download_file?file_path=1.69.0%2Fbinaries%2Fboost_1_69_0-msvc-14.1-64.exe', $exePath);Write-Host "Installing Boost 1.69.0 x64...";cmd /c start /wait "$exePath" /verysilent;del $exePath};Write-Host "Boost 1.69.0 x64 installed!" -ForegroundColor Green
+      } else {
+        Write-Host "Checking for Boost 1.69.0 x86...";$boostdir  = Test-Path $Env:BOOST_LIB_PATH_X86;If ($boostdir -eq $False) {Write-Host "Downloading Boost 1.69.0 x86...";$exePath = "$Env:TEMP\boost_1_69_0-msvc-14.1-32.exe";(New-Object Net.WebClient).DownloadFile('https://bintray.com/boostorg/release/download_file?file_path=1.69.0%2Fbinaries%2Fboost_1_69_0-msvc-14.1-32.exe', $exePath);Write-Host "Installing Boost 1.69.0 x86...";cmd /c start /wait "$exePath" /verysilent;del $exePath};Write-Host "Boost 1.69.0 x86 installed!" -ForegroundColor Green
+      }
+     
+before_build:
+  - ps: |
+      $GeneratorFlags = '/m /v:minimal'
+      $Generator = 'Visual Studio 15 2017'
+
+      if ("$env:PLATFORM" -eq "x86") { 
+          $Architecture = "Win32"
+          $env:_ADDRESS_MODE = "x86"
+      } else { 
+          $Architecture = "x64" 
+          $env:_ADDRESS_MODE = "x64"
+      }
+
+      $env:CMakeGenFlags = "-G `"$Generator`" -A $Architecture -DCMAKE_PREFIX_PATH=$QT5"
+      $env:CMakeBuildFlags = "--config $env:CONFIGURATION"
+  - echo %CMakeGenFlags%
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - cmake -H. -Bbuild %CMakeGenFlags%
+
+build_script:
+  - echo %CMakeBuildFlags%
+  - cd build
+  - cmake --build . %CMakeBuildFlags%
+
+after_build:
+  - clcache -s
+  - if not defined APPVEYOR_REPO_TAG_NAME (set APPVEYOR_REPO_TAG_NAME=%APPVEYOR_REPO_COMMIT%)
+  - cd %CONFIGURATION%
+  - windeployqt.exe AdonWallet.exe
+  - dir
+  # - mkdir adon-gui-wallet-%APPVEYOR_REPO_TAG_NAME%-win.%_ADDRESS_MODE%
+  # - copy build\%CONFIGURATION%\*.* adon-gui-wallet-%APPVEYOR_REPO_TAG_NAME%-win.%_ADDRESS_MODE%
+  # - 7z a adon-gui-wallet-%APPVEYOR_REPO_TAG_NAME%-win.%_ADDRESS_MODE%.zip adon-cli-%APPVEYOR_REPO_TAG_NAME%-win.%_ADDRESS_MODE%
+  # - copy adon-gui-wallet-%APPVEYOR_REPO_TAG_NAME%-win.%_ADDRESS_MODE%.zip ..\..\..\
+
+  # artifacts:
+  #   - path: adon-cli-%APPVEYOR_REPO_TAG_NAME%-win.%_ADDRESS_MODE%.zip
+  #     name: adon-gui-release
+
+  # deploy:
+  #   - provider: GitHub
+  #     auth_token:
+  #       secure: 1PEI0gPKUp6NC2zNmqjVb5Vpm4vz9ErktB5At05xZi8zzmWpMToitcOj1dijXV0S
+  #     artifact: adon-gui-release
+  #     draft: false
+  #     prerelease: false
+  #     on:
+  #       appveyor_repo_name: adon-net/adon-gui-wallet
+  #       appveyor_repo_tag: true
+  #       configuration: Release
+  #       APPVEYOR_BUILD_WORKER_IMAGE: 'Visual Studio 2017'

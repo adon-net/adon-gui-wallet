@@ -18,8 +18,7 @@ git clone https://github.com/adon-net/adon-gui-wallet.git
 ### 2. Update git submodules
 
 ```
-git submodule update --init --recursive
-git submodule foreach git pull origin gui
+git submodule update --init --recursive --remote
 ```
 
 ### 3. Build
