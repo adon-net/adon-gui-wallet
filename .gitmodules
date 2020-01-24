@@ -1,3 +1,4 @@
 [submodule "cryptonote"]
 	path = cryptonote
 	url = https://github.com/adon-net/adon-core.git
+  branch = master
