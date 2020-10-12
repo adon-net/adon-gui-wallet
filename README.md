@@ -86,13 +86,13 @@ linuxdeployqt.AppImage adon.desktop -appimage -verbose=2 -always-overwrite -no-t
 ##### On OS X
 
 ```
-./macdeployqt Adon.app -dmg
+./macdeployqt AdonWallet.app -dmg
 ```
 
 ##### On Windows
 
 ```
-windeployqt.exe Adon.exe
+windeployqt.exe AdonWallet.exe
 ```
 
 ## License
